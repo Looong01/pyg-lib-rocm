@@ -182,7 +182,7 @@ if (WITH_ROCM)
       roc::rocblas
       roc::rocthrust
       libhipcxx::libhipcxx
-      composable_kernel::device_grouped_gemm_operations
+      composable_kernel::device_gemm_operations
   )
 endif()
 
