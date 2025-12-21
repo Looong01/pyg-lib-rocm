@@ -1,6 +1,9 @@
 #include <ATen/ATen.h>
 #include <ATen/hip/HIPContext.h>
 #include <hip/hip_runtime.h>
+// Include HIP FP16 types before CK headers to fix type conversion errors in
+// CK's math_v2.hpp where half_t (_Float16) needs to convert to __half
+#include <hip/hip_fp16.h>
 #include <torch/library.h>
 
 // Composable Kernel headers for grouped GEMM
