@@ -13,9 +13,40 @@ import warnings
 
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext
+from setuptools.dist import Distribution
 
 __version__ = '0.4.0'
 URL = 'https://github.com/pyg-team/pyg-lib'
+
+
+def check_env_flag(name: str, default: str = "") -> bool:
+    value = os.getenv(name, default).upper()
+    return value in ["1", "ON", "YES", "TRUE", "Y"]
+
+
+def is_rocm_build() -> bool:
+    if 'FORCE_ROCM' in os.environ:
+        return check_env_flag('FORCE_ROCM')
+
+    try:
+        import torch
+        return torch.version.hip is not None
+    except Exception:
+        return False
+
+
+def get_distribution_name() -> str:
+    # Optional explicit override for packaging workflows.
+    override = os.getenv('PYG_DIST_NAME')
+    if override:
+        return override
+
+    # For ROCm builds, publish under a dedicated PyPI distribution name while
+    # keeping the import package name as `pyg_lib`.
+    if is_rocm_build():
+        return 'pyg-lib-rocm'
+
+    return 'pyg_lib'
 
 
 class CMakeExtension(Extension):
@@ -27,8 +58,7 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext):
     @staticmethod
     def check_env_flag(name: str, default: str = "") -> bool:
-        value = os.getenv(name, default).upper()
-        return value in ["1", "ON", "YES", "TRUE", "Y"]
+        return check_env_flag(name, default)
 
     def get_ext_filename(self, ext_name):
         # Remove Python ABI suffix:
@@ -109,6 +139,12 @@ class CMakeBuild(build_ext):
                               build_args, cwd=self.build_temp)
 
 
+class PygDistribution(Distribution):
+    def finalize_options(self):
+        super().finalize_options()
+        self.metadata.name = get_distribution_name()
+
+
 def mkl_dependencies():
     if not CMakeBuild.check_env_flag('USE_MKL_BLAS'):
         return []
@@ -153,7 +189,7 @@ else:
     cmdclass = {}
 
 setup(
-    name='pyg_lib',
+    name=get_distribution_name(),
     version=__version__,
     install_requires=install_requires,
     extras_require={
@@ -164,4 +200,5 @@ setup(
     packages=find_packages(),
     ext_modules=ext_modules,
     cmdclass=cmdclass,
+    distclass=PygDistribution,
 )

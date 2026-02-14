@@ -145,6 +145,15 @@ export PYTORCH_ROCM_ARCH="gfx1100;gfx950;gfx942;gfx90a;gfx908;gfx1201;gfx1101;gf
 # export PYG_ROCM_MATMUL_REQUIRE_CK=1
 ```
 
+ROCm package naming for PyPI publishing:
+
+- When building with ROCm backend (`FORCE_ROCM=1` or ROCm PyTorch detected),
+  the distribution name is `pyg-lib-rocm`.
+- This only changes the PyPI package name used for install/publishing.
+  Python import name remains `pyg_lib`, and runtime APIs are unchanged.
+- Optional override for custom publishing workflows:
+  `PYG_DIST_NAME=<your-package-name>`.
+
 `grouped_matmul` / `segment_matmul` behavior on ROCm:
 
 - **Important:** The CK backend in `pyg-lib` only provides native kernels for
